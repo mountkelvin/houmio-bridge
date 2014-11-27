@@ -1,6 +1,10 @@
 express = require('express')
 http = require('http')
 WebSocket = require('ws')
+_ = require('lodash')
+
+
+#Local Server
 
 app = express()
 httpserver = http.createServer app
@@ -10,10 +14,60 @@ console.log "Houm.io bridge HTTP server listening on port #{port}"
 websocketserver = new WebSocket.Server(server: httpserver)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
+
+websocketserver.on 'connection', (socket) ->
+
+  console.log "Socket connected", socket.data
+  socket.on 'close', ->
+    console.log "Socket closed (site: #{socket})"
+  socket.on 'error', (error) ->
+    console.log error
+    console.log "Terminating socket: site: #{socket}"
+    socket.terminate()
+  socket.on 'ping', ->
+    socket.pong()
+  socket.on 'pong', ->
+    storePingTs socket, _.identity
+  socket.on 'message', (s) ->
+    try
+      message = JSON.parse s
+      console.log "MEssage", message
+
+
+      #switch message.command
+      #  when "publish" then onPublish socket, message
+      #  when "subscribe" then onSubscribe socket, message
+      #  when "sensorevent" then onSensorevent message
+      #  when "knxbusdata" then onKnxbusdata socket, message
+      #  when "set" then onSet socket, message
+      #  when "enoceandata" then onEnOceanData socket, message
+      #  when "generaldata" then onGeneralSiteData socket, message
+      #  else console.log "Unknown command:", message.command
+    catch error
+      console.log "Error while handling message:", error, message
+
+
+
+
+
+
+
+
+
+#Connection to Cloud
 houmioServer = process.env.HOUMIO_SERVER || "ws://localhost:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
 console.log "Using HOUMIO_SERVER=#{houmioServer}"
 console.log "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
+
+
+
+
+
+
+
+
+
 
 onSocketOpen = ->
   console.log "Socket to Houm.io server opened"
@@ -26,6 +80,9 @@ onSocketError = (err) ->
 
 onSocketMessage = (msg) ->
   console.log "Received message from Houm.io server", msg
+
+
+
 
 socket = new WebSocket(houmioServer)
 socket.on 'open', onSocketOpen
