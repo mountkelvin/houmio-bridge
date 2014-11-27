@@ -38,6 +38,7 @@ console.log "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
 
 onHoumioSocketOpen = ->
   console.log "Socket to Houm.io server opened"
+  houmioSocket.send JSON.stringify { command: "bridgeReady", data: { siteKey: houmioSiteKey } }
 
 onHoumioSocketClose = ->
   console.log "Socket to Houm.io server closed"
