@@ -2,6 +2,7 @@ express = require('express')
 http = require('http')
 WebSocket = require('ws')
 _ = require('lodash')
+enocean = require('./enocean-parser')
 
 app = express()
 httpServer = http.createServer app
@@ -23,6 +24,10 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
     try
       message = JSON.parse s
       console.log "Message", message
+      data = null
+      if message.protocol is "enocean" then data = enocean.parseMessage message.data
+      console.log data
+
     catch error
       console.log "Error while handling message:", error, message
 
