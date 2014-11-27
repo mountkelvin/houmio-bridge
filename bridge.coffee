@@ -12,6 +12,12 @@ console.log "Houm.io bridge HTTP server listening on port #{port}"
 driverWebSocketServer = new WebSocket.Server(server: httpServer)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
+parseEnoMessage = (msg) ->
+	enoMsg = enocean.parseMessage msg.data
+	if(enoMsg != undefined)
+		console.log "HANDLE BUTTON DATA LOCALLY!"
+
+
 driverWebSocketServer.on 'connection', (driverSocket) ->
   console.log "Driver socket connected"
   driverSocket.on 'close', ->
@@ -23,13 +29,19 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
   driverSocket.on 'message', (s) ->
     try
       message = JSON.parse s
-      console.log "Message", message
-      data = null
-      if message.protocol is "enocean" then data = enocean.parseMessage message.data
-      console.log data
+
+      console.log "Received driver data: ", message
+      if message.protocol is "enocean"
+      	parseEnoMessage message
+
+
+      houmioSocket.send s
 
     catch error
       console.log "Error while handling message:", error, message
+
+
+
 
 houmioServer = process.env.HOUMIO_SERVER || "ws://localhost:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
