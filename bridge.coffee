@@ -16,11 +16,8 @@ console.log "Huom.io bridge WebSocket server listening on port #{port}"
 localStorage = "localStorage.json"
 
 writeDataToLocalStorage = (data) ->
-	fs.writeFile localStorage, data, (err) ->
-		if err
-			console.log "Write Error", err
-		else
-			console.log "Data saved to local storage"
+	console.log "DATAA", JSON.stringify data
+	fs.writeFileSync localStorage, JSON.stringify data
 
 driverWebSocketServer.socketOf = (protocol) ->
   for v, k in this.clients
@@ -77,7 +74,7 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
     catch error
       console.log "Error while handling message:", error, message
 
-houmioServer = process.env.HOUMIO_SERVER || "ws://localhost:3000"
+houmioServer = process.env.HOUMIO_SERVER || "ws://192.168.88.67:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
 console.log "Using HOUMIO_SERVER=#{houmioServer}"
 console.log "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
@@ -94,6 +91,12 @@ onHoumioSocketError = (err) ->
 
 onHoumioSocketMessage = (msg) ->
   console.log "Received message from Houm.io server", msg
+  try
+    message = JSON.parse msg
+    switch message.command
+       when "bridgeConfiguration" then writeDataToLocalStorage message.data
+  catch error
+    console.log "Error while handling message:", error, message
 
 houmioSocket = new WebSocket(houmioServer)
 houmioSocket.on 'open', onHoumioSocketOpen
