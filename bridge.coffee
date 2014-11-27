@@ -2,6 +2,7 @@ express = require('express')
 http = require('http')
 WebSocket = require('ws')
 _ = require('lodash')
+fs = require('fs')
 enocean = require('./enocean-parser')
 
 app = express()
@@ -12,14 +13,55 @@ console.log "Houm.io bridge HTTP server listening on port #{port}"
 driverWebSocketServer = new WebSocket.Server(server: httpServer)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
+localStorage = "localStorage.json"
+
+writeDataToLocalStorage = (data) ->
+	fs.writeFile localStorage, data, (err) ->
+		if err
+			console.log "Write Error", err
+		else
+			console.log "Data saved to local storage"
+
+driverWebSocketServer.socketOf = (protocol) ->
+  for v, k in this.clients
+    socket = this.clients[k]
+    if socket.protocol is protocol then return socket
+  return
+
+
+sendSceneDataToDriver = (sceneData) ->
+	_.each sceneData, (data) ->
+		socket = driverWebSocketServer.socketOf data.protocol
+		if socket and data.protocol is 'enocean'
+			try
+				console.log "Data:", JSON.stringify data
+				socket.send JSON.stringify data
+			catch error
+				console.log "Protocol transmit error: ", error
+
 parseEnoMessage = (msg) ->
 	enoMsg = enocean.parseMessage msg.data
 	if(enoMsg != undefined)
-		console.log "HANDLE BUTTON DATA LOCALLY!"
+		console.log enoMsg
 
+		fs.readFile localStorage, (err, data) ->
+			if !err
+				key = "enocean #{enoMsg.data.enoaddr} #{enoMsg.data.eventnum}"
+				jsonData = JSON.parse data
+
+				sceneData = jsonData[ key ]
+				if sceneData != undefined
+					sendSceneDataToDriver sceneData
+
+onData = (message) ->
+	console.log "Received driver data: ", message
+	if message.protocol is "enocean" then parseEnoMessage message
+
+onDriverReady = (socket, message) ->
+	socket.protocol = message.protocol
+	console.log "#{message.protocol} driver socket connected"
 
 driverWebSocketServer.on 'connection', (driverSocket) ->
-  console.log "Driver socket connected"
   driverSocket.on 'close', ->
     console.log "Socket closed"
   driverSocket.on 'error', (error) ->
@@ -29,19 +71,11 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
   driverSocket.on 'message', (s) ->
     try
       message = JSON.parse s
-
-      console.log "Received driver data: ", message
-      if message.protocol is "enocean"
-      	parseEnoMessage message
-
-
-      houmioSocket.send s
-
+      switch message.command
+        when "data" then onData message
+        when "driverReady" then onDriverReady driverSocket, message
     catch error
       console.log "Error while handling message:", error, message
-
-
-
 
 houmioServer = process.env.HOUMIO_SERVER || "ws://localhost:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
