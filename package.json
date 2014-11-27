@@ -1,0 +1,9 @@
+{
+  "name": "houmio-bridge",
+  "version": "0.0.0",
+  "repository": "https://github.com/goodlookingbody/houmio-bridge",
+  "dependencies": {
+    "express": "^4.10.4",
+    "ws": "^0.5.0"
+  }
+}
