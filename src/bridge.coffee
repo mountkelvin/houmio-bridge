@@ -46,7 +46,7 @@ handleDriverDataLocally = (message) ->
 
 onDriverData = (message) ->
   handleDriverDataLocally message
-  houmioSocket.send message
+  houmioSocket.send JSON.stringify message
 
 onDriverReady = (socket, message) ->
 	socket.protocol = message.protocol
