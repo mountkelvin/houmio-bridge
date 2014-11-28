@@ -58,7 +58,7 @@ onDriverReady = (socket, message) ->
 
 driverWebSocketServer.on 'connection', (driverSocket) ->
   driverSocket.on 'close', ->
-    console.log "Socket closed"
+    console.log "Driver socket closed"
   driverSocket.on 'error', (error) ->
     console.log error
     console.log "Terminating socket"
