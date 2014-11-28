@@ -1,9 +1,9 @@
+_ = require('lodash')
+enocean = require('./enocean-parser')
 express = require('express')
+fs = require('fs')
 http = require('http')
 WebSocket = require('ws')
-_ = require('lodash')
-fs = require('fs')
-enocean = require('./enocean-parser')
 
 app = express()
 httpServer = http.createServer app
