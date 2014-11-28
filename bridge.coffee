@@ -16,7 +16,6 @@ console.log "Huom.io bridge WebSocket server listening on port #{port}"
 localStorage = "localStorage.json"
 
 writeDataToLocalStorage = (data) ->
-	console.log "DATAA", JSON.stringify data
 	fs.writeFileSync localStorage, JSON.stringify data
 
 driverWebSocketServer.socketOf = (protocol) ->
@@ -24,7 +23,6 @@ driverWebSocketServer.socketOf = (protocol) ->
     socket = this.clients[k]
     if socket.protocol is protocol then return socket
   return
-
 
 sendSceneDataToDriver = (sceneData) ->
 	_.each sceneData, (data) ->
