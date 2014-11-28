@@ -34,15 +34,11 @@ driverWebSocketServer.socketOf = (protocol) ->
 
 handleDriverDataLocally = (message) ->
   parseKey = bridgeConfigurationKeyParsers[message.protocol]
-  if parseKey?
-    key = parseKey message.data
-    if key?
-      driverWrites = bridgeConfiguration[key]
-      if driverWrites?
-        driverWrites.forEach (driverWrite) ->
-          driverSocket = driverWebSocketServer.socketOf driverWrite.protocol
-          if driverSocket?
-            driverSocket.send JSON.stringify driverWrite
+  key = parseKey? message.data
+  driverWrites = bridgeConfiguration[key]
+  driverWrites?.forEach (driverWrite) ->
+    driverSocket = driverWebSocketServer.socketOf driverWrite.protocol
+    driverSocket?.send JSON.stringify driverWrite
 
 onDriverData = (message) ->
   handleDriverDataLocally message
