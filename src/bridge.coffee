@@ -67,7 +67,7 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
     try
       message = JSON.parse s
       switch message.command
-        when "data" then onData message
+        when "driverData" then onData message
         when "driverReady" then onDriverReady driverSocket, message
     catch error
       console.log "Error while handling message:", error, message
