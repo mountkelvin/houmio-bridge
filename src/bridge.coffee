@@ -85,7 +85,7 @@ onHoumioSocketClose = ->
   console.log "Socket to Houm.io server closed"
 
 onHoumioSocketError = (err) ->
-  console.log "Error in Houmio. server socket", err
+  console.log "Error in Houm.io server socket", err
 
 onHoumioSocketMessage = (msg) ->
   console.log "Received message from Houm.io server", msg
