@@ -54,22 +54,30 @@ onDriverReady = (socket, message) ->
 	socket.protocol = message.protocol
 	console.log "#{message.protocol} driver socket connected"
 
-driverWebSocketServer.on 'connection', (driverSocket) ->
-  driverSocket.on 'close', ->
-    console.log "Driver socket closed"
-  driverSocket.on 'error', (error) ->
-    console.log error
-    console.log "Terminating socket"
-    driverSocket.terminate()
-  driverSocket.on 'message', (s) ->
-    console.log "Received message from driver:", s
-    try
-      message = JSON.parse s
-      switch message.command
-        when "driverData" then onDriverData message
-        when "driverReady" then onDriverReady driverSocket, message
-    catch error
-      console.log "Error while handling message:", error, message
+onDriverSocketClose = ->
+  console.log "Driver socket closed"
+
+onDriverSocketError = (error) ->
+  console.log error
+  console.log "Terminating socket"
+  driverSocket.terminate()
+
+onDriverSocketMessage = (driverSocket) -> (s) ->
+  console.log "Received message from driver:", s
+  try
+    message = JSON.parse s
+    switch message.command
+      when "driverData" then onDriverData message
+      when "driverReady" then onDriverReady driverSocket, message
+  catch error
+    console.log "Error while handling message:", error, message
+
+onDriverSocketConnection = (driverSocket) ->
+  driverSocket.on 'close', onDriverSocketClose
+  driverSocket.on 'error', onDriverSocketError
+  driverSocket.on 'message', onDriverSocketMessage(driverSocket)
+
+driverWebSocketServer.on 'connection', onDriverSocketConnection
 
 # Houm.io server socket
 
