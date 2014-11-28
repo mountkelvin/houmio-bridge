@@ -13,10 +13,10 @@ console.log "Houm.io bridge HTTP server listening on port #{port}"
 driverWebSocketServer = new WebSocket.Server(server: httpServer)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
-localStorage = "localStorage.json"
+bridgeConfiguration = "bridgeConfiguration.json"
 
-writeDataToLocalStorage = (data) ->
-	fs.writeFileSync localStorage, JSON.stringify data
+writeDataToBridgeConfiguration = (data) ->
+	fs.writeFileSync bridgeConfiguration, JSON.stringify data
 
 driverWebSocketServer.socketOf = (protocol) ->
   for v, k in this.clients
@@ -39,7 +39,7 @@ parseEnoMessage = (msg) ->
 	if(enoMsg != undefined)
 		console.log enoMsg
 
-		fs.readFile localStorage, (err, data) ->
+		fs.readFile bridgeConfiguration, (err, data) ->
 			if !err
 				key = "enocean #{enoMsg.data.enoaddr} #{enoMsg.data.eventnum}"
 				jsonData = JSON.parse data
@@ -92,7 +92,7 @@ onHoumioSocketMessage = (msg) ->
   try
     message = JSON.parse msg
     switch message.command
-       when "bridgeConfiguration" then writeDataToLocalStorage message.data
+       when "bridgeConfiguration" then writeDataToBridgeConfiguration message.data
   catch error
     console.log "Error while handling message:", error, message
 
