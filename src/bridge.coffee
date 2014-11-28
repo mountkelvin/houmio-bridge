@@ -46,7 +46,8 @@ handleDriverDataLocally = (message) ->
 
 onDriverData = (message) ->
   handleDriverDataLocally message
-  houmioSocket.send JSON.stringify message
+  messageWithSiteKey = _.assign message, { siteKey: houmioSiteKey }
+  houmioSocket.send JSON.stringify messageWithSiteKey
 
 onDriverReady = (socket, message) ->
 	socket.protocol = message.protocol
