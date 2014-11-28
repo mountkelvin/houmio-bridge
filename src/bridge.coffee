@@ -41,10 +41,11 @@ driverWebSocketServer.socketOf = (protocol) ->
 handleDriverDataLocally = (message) ->
   parseKey = bridgeConfigurationKeyParsers[message.protocol]
   key = parseKey? message.data
-  driverWrites = bridgeConfiguration[key]
-  driverWrites?.forEach (driverWrite) ->
-    driverSocket = driverWebSocketServer.socketOf driverWrite.protocol
-    driverSocket?.send JSON.stringify driverWrite
+  driverWriteData = bridgeConfiguration[key]
+  driverWriteData?.forEach (datum) ->
+    driverSocket = driverWebSocketServer.socketOf datum.protocol
+    driverWriteMessage = _.assign { command: "write" }, datum
+    driverSocket?.send JSON.stringify driverWriteMessage
 
 onDriverData = (message) ->
   handleDriverDataLocally message
