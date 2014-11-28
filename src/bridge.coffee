@@ -47,7 +47,8 @@ handleDriverDataLocally = (message) ->
 onDriverData = (message) ->
   handleDriverDataLocally message
   messageWithSiteKey = _.assign message, { siteKey: houmioSiteKey }
-  houmioSocket.send JSON.stringify messageWithSiteKey
+  houmioSocket.send (JSON.stringify messageWithSiteKey), (err) ->
+    if err then console.log "Error while sending message to Houm.io server socket:", err
 
 onDriverReady = (socket, message) ->
 	socket.protocol = message.protocol
