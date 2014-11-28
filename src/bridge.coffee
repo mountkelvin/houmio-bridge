@@ -13,10 +13,18 @@ console.log "Houm.io bridge HTTP server listening on port #{port}"
 driverWebSocketServer = new WebSocket.Server(server: httpServer)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
-bridgeConfiguration = "bridgeConfiguration.json"
+bridgeConfigurationKeyParsers =
+  enocean: enocean.parseKey
 
-writeBridgeConfiguration = (data) ->
-	fs.writeFileSync bridgeConfiguration, JSON.stringify data
+bridgeConfigurationFilePath = "bridgeConfiguration.json"
+bridgeConfiguration = {}
+
+if fs.existsSync(bridgeConfigurationFilePath)
+  bridgeConfiguration = JSON.parse fs.readFileSync bridgeConfigurationFilePath
+
+updateBridgeConfiguration = (newBridgeConfiguration) ->
+  fs.writeFileSync bridgeConfigurationFilePath, JSON.stringify(newBridgeConfiguration)
+  bridgeConfiguration = newBridgeConfiguration
 
 driverWebSocketServer.socketOf = (protocol) ->
   for v, k in this.clients
@@ -24,33 +32,21 @@ driverWebSocketServer.socketOf = (protocol) ->
     if socket.protocol is protocol then return socket
   return
 
-sendSceneDataToDriver = (sceneData) ->
-	_.each sceneData, (data) ->
-		socket = driverWebSocketServer.socketOf data.protocol
-		if socket and data.protocol is 'enocean'
-			try
-				console.log "Data:", JSON.stringify data
-				socket.send JSON.stringify data
-			catch error
-				console.log "Protocol transmit error: ", error
+handleDriverDataLocally = (message) ->
+  parseKey = bridgeConfigurationKeyParsers[message.protocol]
+  if parseKey?
+    key = parseKey message.data
+    if key?
+      driverWrites = bridgeConfiguration[key]
+      if driverWrites?
+        driverWrites.forEach (driverWrite) ->
+          driverSocket = driverWebSocketServer.socketOf driverWrite.protocol
+          if driverSocket?
+            driverSocket.send JSON.stringify driverWrite
 
-parseEnoMessage = (msg) ->
-	enoMsg = enocean.parseMessage msg.data
-	if(enoMsg != undefined)
-		console.log enoMsg
-
-		fs.readFile bridgeConfiguration, (err, data) ->
-			if !err
-				key = "enocean #{enoMsg.data.enoaddr} #{enoMsg.data.eventnum}"
-				jsonData = JSON.parse data
-
-				sceneData = jsonData[ key ]
-				if sceneData != undefined
-					sendSceneDataToDriver sceneData
-
-onData = (message) ->
-	console.log "Received driver data: ", message
-	if message.protocol is "enocean" then parseEnoMessage message
+onDriverData = (message) ->
+  handleDriverDataLocally message
+  houmioSocket.send message
 
 onDriverReady = (socket, message) ->
 	socket.protocol = message.protocol
@@ -64,10 +60,11 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
     console.log "Terminating socket"
     driverSocket.terminate()
   driverSocket.on 'message', (s) ->
+    console.log "Received message from driver:", s
     try
       message = JSON.parse s
       switch message.command
-        when "driverData" then onData message
+        when "driverData" then onDriverData message
         when "driverReady" then onDriverReady driverSocket, message
     catch error
       console.log "Error while handling message:", error, message
@@ -92,7 +89,7 @@ onHoumioSocketMessage = (msg) ->
   try
     message = JSON.parse msg
     switch message.command
-       when "bridgeConfiguration" then writeBridgeConfiguration message.data
+       when "bridgeConfiguration" then updateBridgeConfiguration message.data
   catch error
     console.log "Error while handling message:", error, message
 

@@ -101,6 +101,9 @@ parseMessage = (ints) ->
   dataBytes = ints.slice 6
   if pktType is PT_RADIO then return parseRadioTelegram dataBytes, dataLen, optLen
 
+parseKey = (ints) ->
+  enoMsg = parseMessage ints
+  if enoMsg? then "enocean #{enoMsg.data.enoaddr} #{enoMsg.data.eventnum}" else null
 
 toHexString = (ints) ->
   _.map(ints, (num) ->
@@ -110,3 +113,4 @@ toHexString = (ints) ->
     ).join ':'
 
 exports.parseMessage = parseMessage
+exports.parseKey = parseKey
