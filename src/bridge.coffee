@@ -32,20 +32,17 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 
 # Driver sockets
 
-driverWebSocketServer.socketOf = (protocol) ->
-  for v, k in this.clients
-    socket = this.clients[k]
-    if socket.protocol is protocol then return socket
-  return
+driverWebSocketServer.socketsOf = (protocol) ->
+  _.filter (_.values this.clients), protocol: protocol
 
 handleDriverDataLocally = (message) ->
   parseKey = bridgeConfigurationKeyParsers[message.protocol]
   key = parseKey? message.data
   driverWriteData = bridgeConfiguration[key]
   driverWriteData?.forEach (datum) ->
-    driverSocket = driverWebSocketServer.socketOf datum.protocol
+    driverSockets = driverWebSocketServer.socketsOf datum.protocol
     driverWriteMessage = _.assign { command: "write" }, datum
-    driverSocket?.send JSON.stringify driverWriteMessage
+    driverSockets?.forEach (socket) -> socket.send (JSON.stringify driverWriteMessage)
 
 onDriverData = (message) ->
   handleDriverDataLocally message
