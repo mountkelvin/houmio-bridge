@@ -13,8 +13,12 @@ console.log "Houm.io bridge HTTP server listening on port #{port}"
 driverWebSocketServer = new WebSocket.Server(server: httpServer)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
+# Key parsers
+
 bridgeConfigurationKeyParsers =
   enocean: enocean.parseKey
+
+# Bridge configuration update and persistence
 
 bridgeConfigurationFilePath = "bridgeConfiguration.json"
 bridgeConfiguration = {}
@@ -25,6 +29,8 @@ if fs.existsSync(bridgeConfigurationFilePath)
 updateBridgeConfiguration = (newBridgeConfiguration) ->
   fs.writeFileSync bridgeConfigurationFilePath, JSON.stringify(newBridgeConfiguration)
   bridgeConfiguration = newBridgeConfiguration
+
+# Driver sockets
 
 driverWebSocketServer.socketOf = (protocol) ->
   for v, k in this.clients
@@ -64,6 +70,8 @@ driverWebSocketServer.on 'connection', (driverSocket) ->
         when "driverReady" then onDriverReady driverSocket, message
     catch error
       console.log "Error while handling message:", error, message
+
+# Houm.io server socket
 
 houmioServer = process.env.HOUMIO_SERVER || "ws://192.168.88.67:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
