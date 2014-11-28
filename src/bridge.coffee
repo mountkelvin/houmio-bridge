@@ -15,7 +15,7 @@ console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
 bridgeConfiguration = "bridgeConfiguration.json"
 
-writeDataToBridgeConfiguration = (data) ->
+writeBridgeConfiguration = (data) ->
 	fs.writeFileSync bridgeConfiguration, JSON.stringify data
 
 driverWebSocketServer.socketOf = (protocol) ->
@@ -92,7 +92,7 @@ onHoumioSocketMessage = (msg) ->
   try
     message = JSON.parse msg
     switch message.command
-       when "bridgeConfiguration" then writeDataToBridgeConfiguration message.data
+       when "bridgeConfiguration" then writeBridgeConfiguration message.data
   catch error
     console.log "Error while handling message:", error, message
 
