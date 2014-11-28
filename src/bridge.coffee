@@ -42,7 +42,7 @@ handleDriverDataLocally = (message) ->
   driverWriteData?.forEach (datum) ->
     driverSockets = driverWebSocketServer.socketsOf datum.protocol
     driverWriteMessage = _.assign { command: "write" }, datum
-    driverSockets?.forEach (socket) -> socket.send (JSON.stringify driverWriteMessage)
+    driverSockets?.forEach (driverSocket) -> driverSocket.send (JSON.stringify driverWriteMessage)
 
 onDriverData = (message) ->
   handleDriverDataLocally message
