@@ -3,13 +3,13 @@ enocean = require('./enocean-parser')
 express = require('express')
 fs = require('fs')
 http = require('http')
+io = require('socket.io-client')
 WebSocket = require('ws')
 
 app = express()
 httpServer = http.createServer app
 port = Number(process.env.PORT || 3001)
 httpServer.listen port
-console.log "Houm.io bridge HTTP server listening on port #{port}"
 driverWebSocketServer = new WebSocket.Server(server: httpServer)
 console.log "Huom.io bridge WebSocket server listening on port #{port}"
 
@@ -29,6 +29,7 @@ if fs.existsSync(bridgeConfigurationFilePath)
 updateBridgeConfiguration = (newBridgeConfiguration) ->
   fs.writeFileSync bridgeConfigurationFilePath, JSON.stringify(newBridgeConfiguration)
   bridgeConfiguration = newBridgeConfiguration
+  console.log "Updated bridge configuration, persisted to #{bridgeConfigurationFilePath}"
 
 # Driver sockets
 
@@ -46,13 +47,11 @@ handleDriverDataLocally = (message) ->
 
 onDriverData = (message) ->
   handleDriverDataLocally message
-  messageWithSiteKey = _.assign message, { siteKey: houmioSiteKey }
-  houmioSocket.send (JSON.stringify messageWithSiteKey), (err) ->
-    if err then console.log "Error while sending message to Houm.io server socket:", err
+  houmioSocket.emit "driverData", { siteKey: houmioSiteKey, protocol: message.protocol, data: message.data }
 
 onDriverReady = (socket, message) ->
 	socket.protocol = message.protocol
-	console.log "#{message.protocol} driver socket connected"
+	console.log "Driver socket connected, protocol: #{message.protocol}"
 
 onDriverSocketClose = ->
   console.log "Driver socket closed"
@@ -81,33 +80,28 @@ driverWebSocketServer.on 'connection', onDriverSocketConnection
 
 # Houm.io server socket
 
-houmioServer = process.env.HOUMIO_SERVER || "ws://192.168.88.67:3000"
+houmioServer = process.env.HOUMIO_SERVER || "http://localhost:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
 console.log "Using HOUMIO_SERVER=#{houmioServer}"
 console.log "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
 
-onHoumioSocketOpen = ->
-  console.log "Socket to Houm.io server opened"
-  houmioSocket.send JSON.stringify { command: "bridgeReady", data: { siteKey: houmioSiteKey } }
+onHoumioSocketConnect = ->
+  console.log "Connected to #{houmioServer}"
+  houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey }
 
-onHoumioSocketClose = ->
-  console.log "Socket to Houm.io server closed"
+onHoumioSocketConnectError = (err) ->
+  console.log "Connect error to #{houmioServer}:", err
 
-onHoumioSocketError = (err) ->
-  console.log "Error in Houm.io server socket", err
+onHoumioSocketDisconnect = ->
+  console.log "Disconnected from #{houmioServer}"
+  process.exit 0
 
-onHoumioSocketMessage = (msg) ->
-  console.log "Received message from Houm.io server", msg
-  try
-    message = JSON.parse msg
-    switch message.command
-       when "bridgeConfiguration" then updateBridgeConfiguration message.data
-  catch error
-    console.log "Error while handling message:", error, message
+onHoumioSocketUnknownSiteKey = (siteKey) ->
+  console.log "Server did not accept site key '#{siteKey}'"
 
-houmioSocket = new WebSocket(houmioServer)
-houmioSocket.on 'open', onHoumioSocketOpen
-houmioSocket.on 'close', onHoumioSocketClose
-houmioSocket.on 'error', onHoumioSocketError
-houmioSocket.on 'ping', -> houmioSocket.pong()
-houmioSocket.on 'message', onHoumioSocketMessage
+houmioSocket = io houmioServer, { reconnectionDelay: 3000, reconnectionDelayMax: 60000 }
+houmioSocket.on 'connect', onHoumioSocketConnect
+houmioSocket.on 'connect_error', onHoumioSocketConnectError
+houmioSocket.on 'disconnect', onHoumioSocketDisconnect
+houmioSocket.on 'unknownSiteKey', onHoumioSocketUnknownSiteKey
+houmioSocket.on 'bridgeConfiguration', updateBridgeConfiguration
