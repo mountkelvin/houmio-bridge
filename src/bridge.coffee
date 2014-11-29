@@ -1,17 +1,16 @@
 _ = require('lodash')
+carrier = require('carrier')
 enocean = require('./enocean-parser')
-express = require('express')
 fs = require('fs')
-http = require('http')
 io = require('socket.io-client')
-WebSocket = require('ws')
+net = require('net')
 
-app = express()
-httpServer = http.createServer app
-port = Number(process.env.PORT || 3001)
-httpServer.listen port
-driverWebSocketServer = new WebSocket.Server(server: httpServer)
-console.log "Huom.io bridge WebSocket server listening on port #{port}"
+# Hex array printing
+
+toCommaSeparatedHexString = (ints) ->
+  toHexString = (i) -> i.toString(16)
+  addZeroes = (s) -> zerofill(s, 2)
+  ints.map(toHexString).map(addZeroes).join(':')
 
 # Key parsers
 
@@ -33,50 +32,49 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 
 # Driver sockets
 
-driverWebSocketServer.socketsOf = (protocol) ->
-  _.filter (_.values this.clients), protocol: protocol
-
 handleDriverDataLocally = (message) ->
   parseKey = bridgeConfigurationKeyParsers[message.protocol]
   key = parseKey? message.data
   driverWriteData = bridgeConfiguration[key]
   driverWriteData?.forEach (datum) ->
-    driverSockets = driverWebSocketServer.socketsOf datum.protocol
+    driverSockets = driverSocketServer.socketsOf datum.protocol
     driverWriteMessage = _.assign { command: "write" }, datum
-    driverSockets?.forEach (driverSocket) -> driverSocket.send (JSON.stringify driverWriteMessage)
+    driverSockets?.forEach (driverSocket) ->
+      messageS = (JSON.stringify driverWriteMessage)
+      driverSocket.write messageS + "\n"
+      console.log "Wrote message to driver, protocol: #{datum.protocol}, message: #{messageS}"
 
-onDriverData = (message) ->
+onDriverSocketDriverData = (message) ->
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { siteKey: houmioSiteKey, protocol: message.protocol, data: message.data }
 
-onDriverReady = (socket, message) ->
-	socket.protocol = message.protocol
-	console.log "Driver socket connected, protocol: #{message.protocol}"
+onDriverSocketDriverReady = (driverSocket, message) ->
+  driverSocket.protocol = message.protocol
 
-onDriverSocketClose = ->
-  console.log "Driver socket closed"
-
-onDriverSocketError = (error) ->
-  console.log error
-  console.log "Terminating socket"
-  driverSocket.terminate()
-
-onDriverSocketMessage = (driverSocket) -> (s) ->
-  console.log "Received message from driver:", s
+onDriverSocketData = (driverSocket) -> (s) ->
   try
     message = JSON.parse s
     switch message.command
-      when "driverData" then onDriverData message
-      when "driverReady" then onDriverReady driverSocket, message
+      when "driverReady" then onDriverSocketDriverReady driverSocket, message
+      when "driverData" then onDriverSocketDriverData message
+      else console.log "Unknown message from driver socket, protocol: #{driverSocket.protocol}, message:", data
   catch error
     console.log "Error while handling message:", error, message
 
-onDriverSocketConnection = (driverSocket) ->
-  driverSocket.on 'close', onDriverSocketClose
-  driverSocket.on 'error', onDriverSocketError
-  driverSocket.on 'message', onDriverSocketMessage(driverSocket)
+onDriverSocketEnd = (driverSocket) -> () ->
+  driverSocketServer.sockets.splice driverSocketServer.sockets.indexOf(driverSocket), 1
 
-driverWebSocketServer.on 'connection', onDriverSocketConnection
+onDriverSocketConnect = (driverSocket) ->
+  driverSocketServer.sockets.push driverSocket
+  carrier.carry driverSocket, onDriverSocketData(driverSocket)
+  driverSocket.on 'end', onDriverSocketEnd(driverSocket)
+
+driverSocketServer = net.createServer onDriverSocketConnect
+driverSocketServer.sockets = []
+driverSocketServer.socketsOf = (protocol) -> _.filter (_.values this.sockets), protocol: protocol
+
+driverSocketServer.listen 3001
+console.log "TCP socket server listening on port 3001"
 
 # Houm.io server socket
 
@@ -94,7 +92,6 @@ onHoumioSocketConnectError = (err) ->
 
 onHoumioSocketDisconnect = ->
   console.log "Disconnected from #{houmioServer}"
-  process.exit 0
 
 onHoumioSocketUnknownSiteKey = (siteKey) ->
   console.log "Server did not accept site key '#{siteKey}'"
