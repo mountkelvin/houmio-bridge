@@ -32,17 +32,19 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 
 # Driver sockets
 
+writeToDriverSockets = (datum) ->
+  driverSockets = driverSocketServer.socketsOf datum.protocol
+  driverWriteMessage = _.assign { command: "write" }, datum
+  driverSockets?.forEach (driverSocket) ->
+    messageS = (JSON.stringify driverWriteMessage)
+    driverSocket.write messageS + "\n"
+    console.log "Wrote message to driver, protocol: #{datum.protocol}, message: #{messageS}"
+
 handleDriverDataLocally = (message) ->
   parseKey = bridgeConfigurationKeyParsers[message.protocol]
   key = parseKey? message.data
   driverWriteData = bridgeConfiguration[key]
-  driverWriteData?.forEach (datum) ->
-    driverSockets = driverSocketServer.socketsOf datum.protocol
-    driverWriteMessage = _.assign { command: "write" }, datum
-    driverSockets?.forEach (driverSocket) ->
-      messageS = (JSON.stringify driverWriteMessage)
-      driverSocket.write messageS + "\n"
-      console.log "Wrote message to driver, protocol: #{datum.protocol}, message: #{messageS}"
+  driverWriteData?.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
   handleDriverDataLocally message
@@ -102,3 +104,4 @@ houmioSocket.on 'connect_error', onHoumioSocketConnectError
 houmioSocket.on 'disconnect', onHoumioSocketDisconnect
 houmioSocket.on 'unknownSiteKey', onHoumioSocketUnknownSiteKey
 houmioSocket.on 'bridgeConfiguration', updateBridgeConfiguration
+houmioSocket.on 'driverWrite', writeToDriverSockets
