@@ -22,6 +22,10 @@ protocols =
     incoming:
       driverDataToEventSourceKey: enocean.parseKey
 
+dataToString = (message) ->
+  f = protocols[message.protocol].dataToString || (x) -> x.toString()
+  f message.data
+
 # Bridge configuration update and persistence
 
 bridgeConfigurationFilePath = "bridgeConfiguration.json"
@@ -42,7 +46,7 @@ writeToDriverSockets = (datum) ->
   message = _.assign { command: "write" }, datum
   driverSockets?.forEach (driverSocket) ->
     driverSocket.write (JSON.stringify message) + "\n"
-    dataS = protocols[message.protocol].dataToString message.data
+    dataS = dataToString message
     console.log "Wrote message to driver, protocol: #{message.protocol}, data: #{dataS}"
 
 handleDriverDataLocally = (message) ->
@@ -52,7 +56,7 @@ handleDriverDataLocally = (message) ->
   driverWriteData?.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
-  dataS = protocols[message.protocol].dataToString message.data
+  dataS = dataToString message
   console.log "Received data from driver, protocol: #{message.protocol}, data: #{dataS}"
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { siteKey: houmioSiteKey, protocol: message.protocol, data: message.data }
