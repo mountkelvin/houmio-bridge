@@ -16,6 +16,7 @@ toCommaSeparatedHexString = (ints) ->
 
 protocols =
   enocean:
+    dataToString: enocean.dataToString
     outgoing:
       setStateToDriverWriteMessage: enocean.lightStateToProtocolCommands
     incoming:
@@ -38,11 +39,11 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 
 writeToDriverSockets = (datum) ->
   driverSockets = driverSocketServer.socketsOf datum.protocol
-  driverWriteMessage = _.assign { command: "write" }, datum
+  message = _.assign { command: "write" }, datum
   driverSockets?.forEach (driverSocket) ->
-    messageS = (JSON.stringify driverWriteMessage)
-    driverSocket.write messageS + "\n"
-    console.log "Wrote message to driver, protocol: #{datum.protocol}, message: #{messageS}"
+    driverSocket.write (JSON.stringify message) + "\n"
+    dataS = protocols[message.protocol].dataToString message.data
+    console.log "Wrote message to driver, protocol: #{message.protocol}, data: #{dataS}"
 
 handleDriverDataLocally = (message) ->
   eventSourceKeyParse = protocols[message.protocol]?.incoming.driverDataToEventSourceKey || ( -> null )
@@ -51,6 +52,8 @@ handleDriverDataLocally = (message) ->
   driverWriteData?.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
+  dataS = protocols[message.protocol].dataToString message.data
+  console.log "Received data from driver, protocol: #{message.protocol}, data: #{dataS}"
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { siteKey: houmioSiteKey, protocol: message.protocol, data: message.data }
 
