@@ -12,10 +12,14 @@ toCommaSeparatedHexString = (ints) ->
   addZeroes = (s) -> zerofill(s, 2)
   ints.map(toHexString).map(addZeroes).join(':')
 
-# Key parsers
+# Protocols
 
-bridgeConfigurationKeyParsers =
-  enocean: enocean.parseKey
+protocols =
+  enocean:
+    outgoing:
+      setStateToDriverWriteMessage: enocean.lightStateToProtocolCommands
+    incoming:
+      driverDataToEventSourceKey: enocean.parseKey
 
 # Bridge configuration update and persistence
 
@@ -41,9 +45,9 @@ writeToDriverSockets = (datum) ->
     console.log "Wrote message to driver, protocol: #{datum.protocol}, message: #{messageS}"
 
 handleDriverDataLocally = (message) ->
-  parseKey = bridgeConfigurationKeyParsers[message.protocol]
-  key = parseKey? message.data
-  driverWriteData = bridgeConfiguration[key]
+  eventSourceKeyParse = protocols[message.protocol]?.incoming.driverDataToEventSourceKey || ( -> null )
+  eventSourceKey = eventSourceKeyParse message.data
+  driverWriteData = bridgeConfiguration[eventSourceKey]
   driverWriteData?.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
