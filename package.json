@@ -6,6 +6,7 @@
     "express": "^4.10.4",
     "lodash": "^2.4.1",
     "socket.io-client": "^1.2.1",
-    "carrier": "^0.1.14"
+    "carrier": "^0.1.14",
+    "houmio-enocean": "git+https://github.com/goodlookingbody/houmio-enocean.git"
   }
 }
