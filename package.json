@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "repository": "https://github.com/goodlookingbody/houmio-bridge",
   "dependencies": {
+    "carrier": "^0.1.14",
+    "crc": "^2.1.1",
     "express": "^4.10.4",
     "lodash": "^2.4.1",
     "socket.io-client": "^1.2.1",
-    "carrier": "^0.1.14",
-    "crc": "^2.1.1"
+    "zerofill": "^0.1.0"
   }
 }
