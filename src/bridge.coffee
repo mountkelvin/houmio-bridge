@@ -59,7 +59,7 @@ onDriverSocketDriverData = (message) ->
   dataS = dataToString message
   console.log "Received data from driver, protocol: #{message.protocol}, data: #{dataS}"
   handleDriverDataLocally message
-  houmioSocket.emit "driverData", { siteKey: houmioSiteKey, protocol: message.protocol, data: message.data }
+  houmioSocket.emit "driverData", { protocol: message.protocol, data: message.data }
 
 onDriverSocketDriverReady = (driverSocket, message) ->
   driverSocket.protocol = message.protocol
