@@ -1,6 +1,5 @@
 _ = require('lodash')
 carrier = require('carrier')
-enocean = require('houmio-enocean')
 fs = require('fs')
 io = require('socket.io-client')
 net = require('net')
