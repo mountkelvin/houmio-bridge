@@ -5,13 +5,6 @@ fs = require('fs')
 io = require('socket.io-client')
 net = require('net')
 
-# Hex array printing
-
-toCommaSeparatedHexString = (ints) ->
-  toHexString = (i) -> i.toString(16)
-  addZeroes = (s) -> zerofill(s, 2)
-  ints.map(toHexString).map(addZeroes).join(':')
-
 # Protocols
 
 protocols =
