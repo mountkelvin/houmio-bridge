@@ -4,20 +4,7 @@ enocean = require('houmio-enocean')
 fs = require('fs')
 io = require('socket.io-client')
 net = require('net')
-
-# Protocols
-
-protocols =
-  enocean:
-    dataToString: enocean.dataToString
-    outgoing:
-      setStateToDriverWriteMessage: enocean.lightStateToProtocolCommands
-    incoming:
-      driverDataToEventSourceKey: enocean.parseKey
-
-dataToString = (message) ->
-  f = protocols[message.protocol].dataToString || (x) -> x.toString()
-  f message.data
+protocols = require('./protocols')
 
 # Bridge configuration update and persistence
 
@@ -43,13 +30,15 @@ writeToDriverSockets = (datum) ->
     console.log "Wrote message to driver, protocol: #{message.protocol}, data: #{dataS}"
 
 handleDriverDataLocally = (message) ->
-  eventSourceKeyParse = protocols[message.protocol]?.incoming.driverDataToEventSourceKey || ( -> null )
-  eventSourceKey = eventSourceKeyParse message.data
-  driverWriteData = bridgeConfiguration[eventSourceKey]
-  driverWriteData?.forEach writeToDriverSockets
+  key = protocols.find(message.protocol).driverDataToEventSourceKey message.data
+  if key
+    uri = protocols.keyToURI key
+    matchingEntry = _.find bridgeConfiguration, (entry) -> entry.eventSourceURI is uri
+    driverWriteData = matchingEntry?.state || []
+    driverWriteData.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
-  dataS = dataToString message
+  dataS = protocols.find(message.protocol).driverDataToString message.data
   console.log "Received data from driver, protocol: #{message.protocol}, data: #{dataS}"
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { protocol: message.protocol, data: message.data }
