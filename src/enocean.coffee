@@ -43,12 +43,12 @@ PS_RAW_DATA = 0xFF
 ## Button bytes
 
 eventByteMapping = {}
-eventByteMapping[0x50] = "1"
-eventByteMapping[0x10] = "2"
-eventByteMapping[0x70] = "3"
-eventByteMapping[0x30] = "4"
-eventByteMapping[0x15] = "12"
-eventByteMapping[0x37] = "34"
+eventByteMapping[0x50] = "4"
+eventByteMapping[0x10] = "3"
+eventByteMapping[0x70] = "2"
+eventByteMapping[0x30] = "1"
+eventByteMapping[0x15] = "34"
+eventByteMapping[0x37] = "12"
 eventByteMapping[0x35] = "14"
 eventByteMapping[0x17] = "23"
 
