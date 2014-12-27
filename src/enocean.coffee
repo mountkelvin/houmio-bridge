@@ -159,9 +159,9 @@ lightStateToProtocolCommands = (light) ->
   [ command ]
 
 toHexString = (bytes) ->
-  toHexString = (b) -> b.toString(16)
+  byteToHexString = (b) -> b.toString(16)
   addZeroes = (s) -> zeroFill(s, 2)
-  bytes.map(toHexString).map(addZeroes).join(':')
+  bytes.map(byteToHexString).map(addZeroes).join(':')
 
 driverDataToEventSourceKey = (data) ->
   if bufferCanBeInterpretedAsButtonEvent data
