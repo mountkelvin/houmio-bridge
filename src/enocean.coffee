@@ -62,7 +62,7 @@ split2 = (s) -> s.match(/.{1,2}/g)
 
 parseHex = (s) -> parseInt s, 16
 
-toHex = (i) -> i.toString 16
+toHex = (b) -> zeroFill b.toString(16), 2
 
 enoceanBytes = (header, data) -> [SYNC].concat(header).concat(crcOf(header)).concat(data).concat(crcOf(data))
 
