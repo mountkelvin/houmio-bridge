@@ -12,7 +12,7 @@ enoceanMap = {
 defaultMap = {
   driverDataToString: (x) -> x.toString()
   lightStateToDriverWriteData: _.identity
-  driverDataToEventSourceKey: -> null
+  driverDataToEventSourceKey: -> _.identity
 }
 
 find = (protocol) ->
