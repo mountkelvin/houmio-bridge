@@ -29,7 +29,7 @@ writeToDriverSockets = (m) ->
     console.log "Wrote message to driver, protocol: #{m.protocol}, data: #{dataS}"
 
 handleDriverDataLocally = (message) ->
-  key = protocols.find(message.protocol).driverDataToEventSourceKey message.data
+  key = protocols.find(message.protocol).messageToEventSourceKey message
   if key
     uri = protocols.keyToURI key
     matchingEntry = _.find bridgeConfiguration, (entry) -> entry.eventSourceURI is uri
