@@ -1,7 +1,10 @@
 _ = require('lodash')
+Bacon = require('baconjs')
 carrier = require('carrier')
+cron = require('cron')
 fs = require('fs')
 io = require('socket.io-client')
+moment = require('moment')
 net = require('net')
 protocols = require('./protocols')
 
@@ -97,3 +100,14 @@ houmioSocket.on 'disconnect', onHoumioSocketDisconnect
 houmioSocket.on 'unknownSiteKey', onHoumioSocketUnknownSiteKey
 houmioSocket.on 'bridgeConfiguration', updateBridgeConfiguration
 houmioSocket.on 'driverWrite', writeToDriverSockets
+
+# Schedules
+
+minutes = Bacon.fromBinder (sink) ->
+  sinkMoment = -> sink moment().utc().format("ddd/HH:mm")
+  new cron.CronJob '0 * * * * *', sinkMoment, null, true
+  ( -> )
+
+minutes
+  .map (minute) -> { protocol: "schedule", data: { sourceId: "bridge", which: minute } }
+  .onValue handleDriverDataLocally
