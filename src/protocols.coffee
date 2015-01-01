@@ -4,15 +4,16 @@ enocean = require('./enocean')
 enoceanMap = {
   driverDataToString: enocean.toHexString
   lightStateToDriverWriteData: enocean.lightStateToProtocolCommands
-  driverDataToEventSourceKey: (data) ->
-    k = enocean.driverDataToEventSourceKey data
+  messageToEventSourceKey: (message) ->
+    k = enocean.driverDataToEventSourceKey message.data
     if k then { protocol: "enocean", sourceId: k.enoceanAddress, which: k.key } else null
 }
 
 defaultMap = {
-  driverDataToString: (x) -> x.toString()
+  driverDataToString: (x) -> JSON.stringify x
   lightStateToDriverWriteData: _.identity
-  driverDataToEventSourceKey: -> _.identity
+  messageToEventSourceKey: (message) ->
+    { protocol: message.protocol, sourceId: message.data?.sourceId, which: message.data?.which }
 }
 
 find = (protocol) ->
