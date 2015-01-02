@@ -24,7 +24,7 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 # Driver sockets
 
 writeToDriverSockets = (m) ->
-  driverSockets = driverSocketServer.socketsOf m.protocol
+  driverSockets = driverSocketsOf m.protocol
   message = _.assign { command: "write" }, m
   driverSockets?.forEach (driverSocket) ->
     driverSocket.write (JSON.stringify m) + "\n"
@@ -59,7 +59,7 @@ onDriverSocketData = (driverSocket) -> (s) ->
     console.log "Error while handling message:", error, message
 
 onDriverSocketEnd = (driverSocket) -> () ->
-  driverSocketServer.sockets.splice driverSocketServer.sockets.indexOf(driverSocket), 1
+  driverSockets.splice driverSockets.indexOf(driverSocket), 1
 
 onDriverSocketError = (driverSocket) -> (err) ->
   console.log "Error from socket, protocol: #{driverSocket.protocol}, error: #{err}"
@@ -67,17 +67,22 @@ onDriverSocketError = (driverSocket) -> (err) ->
   onDriverSocketEnd(driverSocket)()
 
 onDriverSocketConnect = (driverSocket) ->
-  driverSocketServer.sockets.push driverSocket
+  driverSockets.push driverSocket
   carrier.carry driverSocket, onDriverSocketData(driverSocket)
   driverSocket.on 'end', onDriverSocketEnd(driverSocket)
   driverSocket.on 'error', onDriverSocketError(driverSocket)
 
 driverSocketServer = net.createServer onDriverSocketConnect
-driverSocketServer.sockets = []
-driverSocketServer.socketsOf = (protocol) -> _.filter (_.values this.sockets), protocol: protocol
+driverSockets = []
 
-driverSocketServer.availableProtocols = ->
-  _ driverSocketServer.sockets
+driverSocketsOf = (protocol) ->
+  _ driverSockets
+    .values()
+    .filter protocol: protocol
+
+availableProtocols = ->
+  _ driverSockets
+    .values()
     .pluck "protocol"
     .uniq()
     .reject _.isUndefined
@@ -127,5 +132,5 @@ minutes
 
 # Heartbeat with available protocols
 
-Bacon.fromPoll(10000, driverSocketServer.availableProtocols)
+Bacon.fromPoll(10000, availableProtocols)
   .onValue (protocols) -> houmioSocket.emit "heartBeatWithAvailableProtocols", protocols
