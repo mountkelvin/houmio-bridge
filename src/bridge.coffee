@@ -61,14 +61,27 @@ onDriverSocketData = (driverSocket) -> (s) ->
 onDriverSocketEnd = (driverSocket) -> () ->
   driverSocketServer.sockets.splice driverSocketServer.sockets.indexOf(driverSocket), 1
 
+onDriverSocketError = (driverSocket) -> (err) ->
+  console.log "Error from socket, protocol: #{driverSocket.protocol}, error: #{err}"
+  driverSocket.destroy()
+  onDriverSocketEnd(driverSocket)()
+
 onDriverSocketConnect = (driverSocket) ->
   driverSocketServer.sockets.push driverSocket
   carrier.carry driverSocket, onDriverSocketData(driverSocket)
   driverSocket.on 'end', onDriverSocketEnd(driverSocket)
+  driverSocket.on 'error', onDriverSocketError(driverSocket)
 
 driverSocketServer = net.createServer onDriverSocketConnect
 driverSocketServer.sockets = []
 driverSocketServer.socketsOf = (protocol) -> _.filter (_.values this.sockets), protocol: protocol
+
+driverSocketServer.availableProtocols = ->
+  _ driverSocketServer.sockets
+    .pluck "protocol"
+    .uniq()
+    .reject _.isUndefined
+    .value()
 
 driverSocketServer.listen 3001
 console.log "TCP socket server listening on port 3001"
@@ -111,3 +124,8 @@ minutes = Bacon.fromBinder (sink) ->
 minutes
   .map (minute) -> { protocol: "schedule", data: { sourceId: "bridge", which: minute } }
   .onValue handleDriverDataLocally
+
+# Heartbeat with available protocols
+
+Bacon.fromPoll(10000, driverSocketServer.availableProtocols)
+  .onValue (protocols) -> houmioSocket.emit "heartBeatWithAvailableProtocols", protocols
