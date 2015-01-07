@@ -23,13 +23,15 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 
 # Driver sockets
 
-writeToDriverSockets = (m) ->
-  driverSockets = driverSocketsOf m.protocol
-  message = _.assign { command: "write" }, m
+writeToDriverSockets = (message) ->
+  protocol = message.protocol
+  driverSockets = driverSocketsOf protocol
+  messageWithoutProtocol = _.omit message, "protocol"
+  writeMessage = _.assign { command: "write" }, messageWithoutProtocol
   driverSockets?.forEach (driverSocket) ->
-    driverSocket.write (JSON.stringify m) + "\n"
-    dataS = protocols.find(m.protocol).driverDataToString m.data
-    console.log "Wrote message to driver, protocol: #{m.protocol}, data: #{dataS}"
+    driverSocket.write (JSON.stringify writeMessage) + "\n"
+    dataS = protocols.find(protocol).driverDataToString message.data
+    console.log "Wrote message to driver, protocol: #{protocol}, data: #{dataS}"
 
 handleDriverDataLocally = (message) ->
   key = protocols.find(message.protocol).messageToEventSourceKey message
