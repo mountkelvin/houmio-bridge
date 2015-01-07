@@ -11,7 +11,7 @@ enoceanMap = {
 
 defaultMap = {
   driverDataToString: (x) -> JSON.stringify x
-  lightStateToDriverWriteData: _.identity
+  lightStateToDriverWriteData: (x) -> [ _.identity x ]
   messageToEventSourceKey: (message) ->
     { protocol: message.protocol, sourceId: message.data?.sourceId, which: message.data?.which }
 }
