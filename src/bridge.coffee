@@ -49,6 +49,7 @@ onDriverSocketDriverData = (message) ->
 
 onDriverSocketDriverReady = (driverSocket, message) ->
   driverSocket.protocol = message.protocol
+  driverSocket.write (JSON.stringify { command: "driverReadyAck" }) + "\n"
 
 onDriverSocketData = (driverSocket) -> (s) ->
   try
