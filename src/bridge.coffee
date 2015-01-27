@@ -131,7 +131,7 @@ minutes = Bacon.fromBinder (sink) ->
 
 minutes
   .map (minute) -> { protocol: "schedule", data: { sourceId: "bridge", which: minute } }
-  .onValue handleDriverDataLocally
+  .onValue onDriverSocketDriverData
 
 # Heartbeat with available protocols
 
