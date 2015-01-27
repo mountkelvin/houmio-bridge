@@ -51,6 +51,8 @@ eventByteMapping[0x15] = "34"
 eventByteMapping[0x37] = "12"
 eventByteMapping[0x35] = "14"
 eventByteMapping[0x17] = "23"
+eventByteMapping[0xF0] = "34"
+eventByteMapping[0xE0] = "12"
 
 # Private functions
 
