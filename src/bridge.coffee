@@ -121,7 +121,7 @@ onHoumioSocketDisconnect = ->
 onHoumioSocketUnknownSiteKey = (siteKey) ->
   exit "Server did not accept site key '#{siteKey}'"
 
-houmioSocket = io houmioServer, { reconnectionDelay: 3000, reconnectionDelayMax: 60000 }
+houmioSocket = io houmioServer, { timeout: 60000, reconnectionDelay: 3000, reconnectionDelayMax: 60000 }
 houmioSocket.on 'connect', onHoumioSocketConnect
 houmioSocket.on 'connect_error', onHoumioSocketConnectError
 houmioSocket.on 'connect_timeout', onHoumioSocketConnectTimeout
