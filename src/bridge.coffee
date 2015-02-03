@@ -8,6 +8,10 @@ moment = require('moment')
 net = require('net')
 protocols = require('./protocols')
 
+exit = (msg) ->
+  console.log msg
+  process.exit 1
+
 # Bridge configuration update and persistence
 
 bridgeConfigurationFilePath = "bridgeConfiguration.json"
@@ -106,17 +110,21 @@ onHoumioSocketConnect = ->
   houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey }
 
 onHoumioSocketConnectError = (err) ->
-  console.log "Connect error to #{houmioServer}:", err
+  exit "Connect error to #{houmioServer}: #{err}"
+
+onHoumioSocketConnectTimeout = ->
+  exit "Connect timeout to #{houmioServer}"
 
 onHoumioSocketDisconnect = ->
-  console.log "Disconnected from #{houmioServer}"
+  exit "Disconnected from #{houmioServer}"
 
 onHoumioSocketUnknownSiteKey = (siteKey) ->
-  console.log "Server did not accept site key '#{siteKey}'"
+  exit "Server did not accept site key '#{siteKey}'"
 
 houmioSocket = io houmioServer, { reconnectionDelay: 3000, reconnectionDelayMax: 60000 }
 houmioSocket.on 'connect', onHoumioSocketConnect
 houmioSocket.on 'connect_error', onHoumioSocketConnectError
+houmioSocket.on 'connect_timeout', onHoumioSocketConnectTimeout
 houmioSocket.on 'disconnect', onHoumioSocketDisconnect
 houmioSocket.on 'unknownSiteKey', onHoumioSocketUnknownSiteKey
 houmioSocket.on 'bridgeConfiguration', updateBridgeConfiguration
