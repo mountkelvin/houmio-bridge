@@ -28,14 +28,14 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 # Driver sockets
 
 writeToDriverSockets = (message) ->
+  console.log "Received message from server:", JSON.stringify message
   protocol = message.protocol
   driverSockets = driverSocketsOf protocol
-  messageWithoutProtocol = _.omit message, "protocol"
-  writeMessage = _.assign { command: "write" }, messageWithoutProtocol
+  writeMessage = _.assign { command: "write" }, message
   driverSockets?.forEach (driverSocket) ->
-    driverSocket.write (JSON.stringify writeMessage) + "\n"
-    dataS = protocols.find(protocol).driverDataToString message.data
-    console.log "Wrote message to driver, protocol: #{protocol}, data: #{dataS}"
+    messageAsString = (JSON.stringify writeMessage) + "\n"
+    driverSocket.write messageAsString
+    console.log "Wrote message to driver: #{messageAsString}".trim()
 
 handleDriverDataLocally = (message) ->
   key = protocols.find(message.protocol).messageToEventSourceKey message
@@ -46,8 +46,8 @@ handleDriverDataLocally = (message) ->
     driverWriteData.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
+  console.log "Received data from driver:", JSON.stringify message
   dataS = protocols.find(message.protocol).driverDataToString message.data
-  console.log "Received data from driver, protocol: #{message.protocol}, data: #{dataS}"
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { protocol: message.protocol, data: message.data }
 
