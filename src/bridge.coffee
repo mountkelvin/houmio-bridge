@@ -25,15 +25,37 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
   bridgeConfiguration = newBridgeConfiguration
   console.log "Updated bridge configuration, persisted to #{bridgeConfigurationFilePath}"
 
-# Driver sockets
+# Listener sockets
 
-driverSockets = []
+listenerSockets = []
+listenerSocketServer = net.createServer  (listenerSocket) ->
+  console.log "Listener connected"
+  listenerSockets.push listenerSocket
+  listenerSocket.on 'data', (data) -> console.log "Listener sent", data
+  onEnd = ->
+    listenerSockets.splice listenerSockets.indexOf(listenerSocket), 1
+  listenerSocket.on 'end', onEnd
+  listenerSocket.on 'error', ->
+    listenerSocket.destroy()
+    onEnd()
+
+sendToListeners = (message) ->
+  listenerSockets.forEach (socket) ->
+    messageAsString = (JSON.stringify message) + "\n"
+    socket.write messageAsString
+    console.log "Wrote message to listener: #{messageAsString}".trim()
+
+listenerSocketServer.listen 3666
+console.log "Listener TCP socket server listening on port 3666"
+
+# Driver sockets
 
 writeToDriverSockets = (message) ->
   console.log "Received message from server:", JSON.stringify message
   protocol = message.protocol
+  driverSockets = driverSocketsOf protocol
   writeMessage = _.assign { command: "write" }, message
-  driverSocketsOf(protocol).forEach (driverSocket) ->
+  driverSockets?.forEach (driverSocket) ->
     messageAsString = (JSON.stringify writeMessage) + "\n"
     driverSocket.write messageAsString
     console.log "Wrote message to driver: #{messageAsString}".trim()
@@ -51,6 +73,7 @@ onDriverSocketDriverData = (message) ->
   dataS = protocols.find(message.protocol).driverDataToString message.data
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { protocol: message.protocol, data: message.data }
+  sendToListeners message
 
 onDriverSocketDriverReady = (driverSocket, message) ->
   driverSocket.protocol = message.protocol
@@ -81,6 +104,7 @@ onDriverSocketConnect = (driverSocket) ->
   driverSocket.on 'error', onDriverSocketError(driverSocket)
 
 driverSocketServer = net.createServer onDriverSocketConnect
+driverSockets = []
 
 driverSocketsOf = (protocol) ->
   _ driverSockets
