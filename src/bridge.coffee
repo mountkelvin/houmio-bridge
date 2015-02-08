@@ -27,12 +27,13 @@ updateBridgeConfiguration = (newBridgeConfiguration) ->
 
 # Driver sockets
 
+driverSockets = []
+
 writeToDriverSockets = (message) ->
   console.log "Received message from server:", JSON.stringify message
   protocol = message.protocol
-  driverSockets = driverSocketsOf protocol
   writeMessage = _.assign { command: "write" }, message
-  driverSockets?.forEach (driverSocket) ->
+  driverSocketsOf(protocol).forEach (driverSocket) ->
     messageAsString = (JSON.stringify writeMessage) + "\n"
     driverSocket.write messageAsString
     console.log "Wrote message to driver: #{messageAsString}".trim()
@@ -80,7 +81,6 @@ onDriverSocketConnect = (driverSocket) ->
   driverSocket.on 'error', onDriverSocketError(driverSocket)
 
 driverSocketServer = net.createServer onDriverSocketConnect
-driverSockets = []
 
 driverSocketsOf = (protocol) ->
   _ driverSockets
