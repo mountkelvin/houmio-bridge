@@ -110,7 +110,7 @@ onHoumioSocketConnect = ->
   houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey }
 
 onHoumioSocketConnectError = (err) ->
-  exit "Connect error to #{houmioServer}: #{err}"
+  console.log "Connect error to #{houmioServer}: #{err}"
 
 onHoumioSocketConnectTimeout = ->
   exit "Connect timeout to #{houmioServer}"
@@ -123,6 +123,7 @@ onHoumioSocketUnknownSiteKey = (siteKey) ->
 
 houmioSocket = io houmioServer, { timeout: 60000, reconnectionDelay: 3000, reconnectionDelayMax: 60000 }
 houmioSocket.on 'connect', onHoumioSocketConnect
+houmioSocket.on 'reconnect', onHoumioSocketConnect
 houmioSocket.on 'connect_error', onHoumioSocketConnectError
 houmioSocket.on 'connect_timeout', onHoumioSocketConnectTimeout
 houmioSocket.on 'disconnect', onHoumioSocketDisconnect
