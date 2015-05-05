@@ -120,7 +120,7 @@ onHoumioSocketConnectTimeout = ->
   exit "Connect timeout to #{houmioServer}"
 
 onHoumioSocketDisconnect = ->
-  exit "Disconnected from #{houmioServer}"
+  console.log "Disconnected from #{houmioServer}"
 
 onHoumioSocketUnknownSiteKey = (siteKey) ->
   exit "Server did not accept site key '#{siteKey}'"
