@@ -122,7 +122,7 @@ onHoumioSocketReconnectError = (err) ->
   console.log "Reconnect error to #{houmioServer}: #{err}"
 
 onHoumioSocketConnectTimeout = ->
-  exit "Connect timeout to #{houmioServer}"
+  console.log "Connect timeout to #{houmioServer}"
 
 onHoumioSocketDisconnect = ->
   console.log "Disconnected from #{houmioServer}"
