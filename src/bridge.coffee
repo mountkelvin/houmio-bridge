@@ -116,6 +116,9 @@ onHoumioSocketReconnect = ->
 onHoumioSocketConnectError = (err) ->
   console.log "Connect error to #{houmioServer}: #{err}"
 
+onHoumioSocketReconnectError = (err) ->
+  console.log "Reconnect error to #{houmioServer}: #{err}"
+
 onHoumioSocketConnectTimeout = ->
   exit "Connect timeout to #{houmioServer}"
 
@@ -129,6 +132,7 @@ houmioSocket = io houmioServer, { timeout: 60000, reconnectionDelay: 3000, recon
 houmioSocket.on 'connect', onHoumioSocketConnect
 houmioSocket.on 'reconnect', onHoumioSocketReconnect
 houmioSocket.on 'connect_error', onHoumioSocketConnectError
+houmioSocket.on 'reconnect_error', onHoumioSocketReconnectError
 houmioSocket.on 'connect_timeout', onHoumioSocketConnectTimeout
 houmioSocket.on 'disconnect', onHoumioSocketDisconnect
 houmioSocket.on 'unknownSiteKey', onHoumioSocketUnknownSiteKey
