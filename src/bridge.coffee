@@ -7,9 +7,13 @@ io = require('socket.io-client')
 moment = require('moment')
 net = require('net')
 protocols = require('./protocols')
+winston = require('winston')
+
+winston.remove winston.transports.Console
+winston.add winston.transports.Console, timestamp: true
 
 exit = (msg) ->
-  console.log msg
+  winston.info msg
   process.exit 1
 
 # Bridge configuration update and persistence
@@ -23,19 +27,19 @@ if fs.existsSync(bridgeConfigurationFilePath)
 updateBridgeConfiguration = (newBridgeConfiguration) ->
   fs.writeFileSync bridgeConfigurationFilePath, JSON.stringify(newBridgeConfiguration)
   bridgeConfiguration = newBridgeConfiguration
-  console.log "Updated bridge configuration, persisted to #{bridgeConfigurationFilePath}"
+  winston.info "Updated bridge configuration, persisted to #{bridgeConfigurationFilePath}"
 
 # Driver sockets
 
 writeToDriverSockets = (message) ->
-  console.log "Received message from server:", JSON.stringify message
+  winston.info "Received message from server:", JSON.stringify message
   protocol = message.protocol
   driverSockets = driverSocketsOf protocol
   writeMessage = _.assign { command: "write" }, message
   driverSockets?.forEach (driverSocket) ->
     messageAsString = (JSON.stringify writeMessage) + "\n"
     driverSocket.write messageAsString
-    console.log "Wrote message to driver: #{messageAsString}".trim()
+    winston.info "Wrote message to driver: #{messageAsString}".trim()
 
 handleDriverDataLocally = (message) ->
   key = protocols.find(message.protocol).messageToEventSourceKey message
@@ -46,7 +50,7 @@ handleDriverDataLocally = (message) ->
     driverWriteData.forEach writeToDriverSockets
 
 onDriverSocketDriverData = (message) ->
-  console.log "Received data from driver:", JSON.stringify message
+  winston.info "Received data from driver:", JSON.stringify message
   dataS = protocols.find(message.protocol).driverDataToString message.data
   handleDriverDataLocally message
   houmioSocket.emit "driverData", { protocol: message.protocol, data: message.data }
@@ -61,15 +65,15 @@ onDriverSocketData = (driverSocket) -> (s) ->
     switch message.command
       when "driverReady" then onDriverSocketDriverReady driverSocket, message
       when "driverData" then onDriverSocketDriverData message
-      else console.log "Unknown message from driver socket, protocol: #{driverSocket.protocol}, message:", data
+      else winston.info "Unknown message from driver socket, protocol: #{driverSocket.protocol}, message:", data
   catch error
-    console.log "Error while handling message:", error, message
+    winston.info "Error while handling message:", error, message
 
 onDriverSocketEnd = (driverSocket) -> () ->
   driverSockets.splice driverSockets.indexOf(driverSocket), 1
 
 onDriverSocketError = (driverSocket) -> (err) ->
-  console.log "Error from socket, protocol: #{driverSocket.protocol}, error: #{err}"
+  winston.info "Error from socket, protocol: #{driverSocket.protocol}, error: #{err}"
   driverSocket.destroy()
   onDriverSocketEnd(driverSocket)()
 
@@ -96,36 +100,36 @@ availableProtocols = ->
     .value()
 
 driverSocketServer.listen 3001
-console.log "TCP socket server listening on port 3001"
+winston.info "TCP socket server listening on port 3001"
 
 # Houm.io server socket
 
 houmioServer = process.env.HOUMIO_SERVER || "http://localhost:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
 houmioBridgeVersion = JSON.parse(fs.readFileSync('./package.json')).version
-console.log "Using HOUMIO_SERVER=#{houmioServer}"
-console.log "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
-console.log "Using houmio-bridge version #{houmioBridgeVersion}"
+winston.info "Using HOUMIO_SERVER=#{houmioServer}"
+winston.info "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
+winston.info "Using houmio-bridge version #{houmioBridgeVersion}"
 
 onHoumioSocketConnect = ->
-  console.log "Connected to #{houmioServer}"
+  winston.info "Connected to #{houmioServer}"
   houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey, bridgeVersion: houmioBridgeVersion }
 
 onHoumioSocketReconnect = ->
-  console.log "Reconnected to #{houmioServer}"
+  winston.info "Reconnected to #{houmioServer}"
   houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey, bridgeVersion: houmioBridgeVersion }
 
 onHoumioSocketConnectError = (err) ->
-  console.log "Connect error to #{houmioServer}: #{err}"
+  winston.info "Connect error to #{houmioServer}: #{err}"
 
 onHoumioSocketReconnectError = (err) ->
-  console.log "Reconnect error to #{houmioServer}: #{err}"
+  winston.info "Reconnect error to #{houmioServer}: #{err}"
 
 onHoumioSocketConnectTimeout = ->
-  console.log "Connect timeout to #{houmioServer}"
+  winston.info "Connect timeout to #{houmioServer}"
 
 onHoumioSocketDisconnect = ->
-  console.log "Disconnected from #{houmioServer}"
+  winston.info "Disconnected from #{houmioServer}"
 
 onHoumioSocketUnknownSiteKey = (siteKey) ->
   exit "Server did not accept site key '#{siteKey}'"
