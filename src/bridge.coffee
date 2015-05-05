@@ -109,11 +109,11 @@ console.log "Using houmio-bridge version #{houmioBridgeVersion}"
 
 onHoumioSocketConnect = ->
   console.log "Connected to #{houmioServer}"
-  houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey }
+  houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey, bridgeVersion: houmioBridgeVersion }
 
 onHoumioSocketReconnect = ->
   console.log "Reconnected to #{houmioServer}"
-  houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey }
+  houmioSocket.emit "bridgeReady", { siteKey: houmioSiteKey, bridgeVersion: houmioBridgeVersion }
 
 onHoumioSocketConnectError = (err) ->
   console.log "Connect error to #{houmioServer}: #{err}"
