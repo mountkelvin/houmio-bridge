@@ -102,8 +102,10 @@ console.log "TCP socket server listening on port 3001"
 
 houmioServer = process.env.HOUMIO_SERVER || "http://localhost:3000"
 houmioSiteKey = process.env.HOUMIO_SITEKEY || "devsite"
+houmioBridgeVersion = JSON.parse(fs.readFileSync('./package.json')).version
 console.log "Using HOUMIO_SERVER=#{houmioServer}"
 console.log "Using HOUMIO_SITEKEY=#{houmioSiteKey}"
+console.log "Using houmio-bridge version #{houmioBridgeVersion}"
 
 onHoumioSocketConnect = ->
   console.log "Connected to #{houmioServer}"
