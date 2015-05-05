@@ -7,8 +7,8 @@ The bridge will connect by default to [http://localhost:3000](http://localhost:3
 
 ### Installing for production (with supervisor)
 
-    npm install houmio/houmio-bridge --tag 2.0.0
+    npm install houmio/houmio-bridge --tag <release>
     supervisorctl update
     supervisorctl restart houmio-bridge
 
-where `2.0.0` is the version.
+See https://github.com/houmio/houmio-bridge/releases for releases.
