@@ -13,4 +13,6 @@ The bridge will connect by default to [http://localhost:3000](http://localhost:3
     $ supervisorctl update
     $ supervisorctl restart houmio-bridge
 
+[Fing](http://www.overlooksoft.com/fing) is a nice tool for listing the IP and MAC addresses of the network you are in.
+
 See https://github.com/houmio/houmio-bridge/releases for releases.
